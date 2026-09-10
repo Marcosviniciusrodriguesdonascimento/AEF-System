@@ -59,34 +59,71 @@ texto e usar a API REST do Power BI via script próprio.
 | [ranaroussi/yfinance](https://github.com/ranaroussi/yfinance) | 25,2k | Padrão de fato para dados de mercado. Já é o que o `coletor-dados-financeiros` pressupõe. |
 | [defeat-beta/defeatbeta-api](https://github.com/defeat-beta/defeatbeta-api) | 746 | Alternativa ao Yahoo Finance com mais confiabilidade; inclui transcrições de earnings calls e receita por segmento/geografia. Bom plano B quando o yfinance quebra por rate limit. |
 
-## 5. O que **não** encontrei (lacunas reais)
+## 5. Fiscal, contábil e SPED (preenche a lacuna da rodada anterior)
 
-Buscas específicas voltaram vazias — vale registrar para não repetir o esforço:
+Numa busca com termos mais diretos (a rodada anterior usou termos compostos
+demais e voltou vazia), apareceu justamente o que faltava para o
+`contador-fiscal`:
 
-- **SPED / NF-e / obrigações acessórias**: nenhuma biblioteca Python com tração
-  para o `contador-fiscal`. O conhecimento tributário continua tendo que morar
-  no prompt do agente.
-- **Demonstrações financeiras da CVM (DFP/ITR)** empacotadas como biblioteca:
-  não há um equivalente maduro. Coleta teria que ser feita direto no portal de
-  dados abertos da CVM.
-- **MCP de Power BI maduro**: ver ressalva na seção 2.
+| Repositório | ⭐ | Por que interessa |
+|---|---|---|
+| [DeHor-Labs/mcp-fiscal-brasil](https://github.com/DeHor-Labs/mcp-fiscal-brasil) | 295 | **O achado mais relevante desta rodada.** MCP server fiscal brasileiro: CNPJ, NF-e, NFS-e, CT-e, SPED, eSocial, Simples Nacional, já com a Reforma Tributária 2026. 44 tools, tabelas offline (não depende de webservice externo instável), Python, ativo (set/2026). Encaixe direto com o `contador-fiscal` — dá a ele consulta estruturada em vez de depender só do conhecimento no prompt. |
+| [robertoecf/OpenFinData](https://github.com/robertoecf/OpenFinData) | 9 | Infraestrutura de dados financeiros públicos do Brasil (API REST + MCP + CLI): BCB, CVM, ANBIMA, ANEEL, IPEA, SICONFI, SUSEP, Tesouro Direto. Pequeno e novo, mas é a primeira coisa que achamos cobrindo CVM de forma empacotada — vale acompanhar mais do que adotar já. |
+| [akretion/nfelib](https://github.com/akretion/nfelib) | 207 | Bindings Python para ler/gerar XML de NF-e, NFS-e nacional, CT-e, MDF-e, BP-e. Base sólida se algum cliente precisar de emissão/leitura de nota fiscal via automação. |
+| [TadaSoftware/PyNFe](https://github.com/TadaSoftware/PyNFe) | 590 | Cliente Python mais antigo e estrelado para o webservice de NF-e (SEFAZ). Referência, mas `nfelib` está mais ativo. |
+| [Engenere/BrazilFiscalReport](https://github.com/Engenere/BrazilFiscalReport) | 124 | Gera os PDFs (DANFE, DACTE, DAMDFE, DACCe, DANFSe) a partir dos XMLs fiscais. Complementa `nfelib`/`PyNFe` quando o entregável final precisa ser o documento visual. |
 
-## 6. Prioridade sugerida de adoção
+## 6. Comunicação com cliente e automação de workflow
+
+Áreas que a rodada anterior não cobriu: como o `assistente-executivo` fala
+com o cliente fora de e-mail, e como automatizar processos sem escrever tudo
+em Python puro.
+
+| Repositório | ⭐ | Por que interessa |
+|---|---|---|
+| [lharries/whatsapp-mcp](https://github.com/lharries/whatsapp-mcp) | 6,2k | MCP server de WhatsApp — ler e enviar mensagens direto pelo agente. De longe o mais estrelado e ativo dos MCPs de WhatsApp que existem. Encaixe natural com `assistente-executivo` para follow-up de cliente, se o uso via WhatsApp Web for aceitável para o negócio (não é a API oficial do WhatsApp Business). |
+| [n8n-io/n8n](https://github.com/n8n-io/n8n) | 203,9k | Plataforma de automação de workflow self-hosted, com nós de IA e 400+ integrações. Não substitui os scripts do `engenheiro-automacao`, mas é uma opção viável para automações que um cliente final precisa operar/visualizar sozinho (sem depender de rodar Python). Vale considerar quando o entregável for "processo automatizado que o cliente mantém", não um script nosso. |
+
+**Ressalva:** não achei um MCP de Google Sheets com tração real (o maior
+tinha 20 estrelas) — para isso, a integração `Google_Drive`/`Google_Docs` já
+disponível neste ambiente resolve a maior parte do caso de uso.
+
+## 7. O que **ainda não** encontrei (lacunas reais)
+
+- **Demonstrações financeiras da CVM (DFP/ITR) empacotadas como biblioteca
+  Python madura**: `OpenFinData` é o candidato mais próximo, mas é recente e
+  pequeno (9 estrelas) — não trataria como dependência de produção ainda.
+- **MCP de Power BI maduro**: ver ressalva na seção 2 — continua sem opção
+  confiável.
+- **Google Sheets como MCP com tração**: ver ressalva acima; usar a
+  integração Google já disponível em vez de adicionar um MCP de terceiros.
+
+## 8. Prioridade sugerida de adoção
 
 1. **`python-bcb`** — ganho imediato e baixo risco no `pesquisador-mercado`.
-2. **`excel-mcp-server` (haris-musa)** — impacto alto no `especialista-excel` e
+2. **`mcp-fiscal-brasil`** — maior ganho potencial desta rodada; dá ao
+   `contador-fiscal` consulta estruturada de CNPJ/NF-e/SPED/eSocial em vez de
+   depender só do prompt. Testar em ambiente isolado antes de expor a cliente.
+3. **`excel-mcp-server` (haris-musa)** — impacto alto no `especialista-excel` e
    no `relatorio-mensal`; testar primeiro em ambiente isolado.
-3. **`awesome-agent-skills`** — garimpar 2 ou 3 skills para preencher lacunas.
-4. **`yahoo-finance-mcp`** — só se quisermos tirar a coleta de dados de dentro
+4. **`awesome-agent-skills`** — garimpar 2 ou 3 skills para preencher lacunas.
+5. **`yahoo-finance-mcp`** — só se quisermos tirar a coleta de dados de dentro
    de script próprio.
-5. **`defeatbeta-api`** — deixar mapeado como fallback do yfinance.
+6. **`whatsapp-mcp` (lharries)** — só depois de confirmar internamente que
+   automatizar WhatsApp Web (não a API oficial) é aceitável para o negócio.
+7. **`defeatbeta-api`** — deixar mapeado como fallback do yfinance.
+8. **`OpenFinData`** — acompanhar sem adotar ainda; reavaliar quando o
+   projeto amadurecer.
 
 ---
 
 ### Nota de método
 
 A busca foi feita pela API de busca do GitHub a partir deste ambiente, cujo
-índice é mais restrito que o site. Consultas sobre nichos brasileiros
-(contabilidade, SPED, CVM) retornaram pouco ou nada — a ausência aqui não
-prova ausência no GitHub. Vale uma segunda passada manual em
-[github.com/search](https://github.com/search) para esses temas.
+índice é mais restrito que o site. Na primeira rodada, consultas com termos
+compostos sobre nichos brasileiros (ex.: `"sped nfe nota fiscal eletronica
+brasil python parser"`) voltaram vazias; nesta segunda rodada, os mesmos
+temas com termos mais simples (`"nfe python"`) trouxeram resultados
+relevantes. Fica o aprendizado: prefira 2–3 termos por consulta nesta API.
+Ainda vale uma passada manual em [github.com/search](https://github.com/search)
+para os temas que continuam sem cobertura (seção 7).
